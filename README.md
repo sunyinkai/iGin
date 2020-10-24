@@ -2,6 +2,10 @@
 ### features:
 #### 1,路由
 将请求转发到对应的处理函数
+支持动态路由,例如:  
+/hello/:name/  
+/static/*filepath
+
 #### 2,context
 对原生的request和response进行封装
 #### 3,分组控制
