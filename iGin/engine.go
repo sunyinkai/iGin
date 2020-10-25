@@ -1,7 +1,7 @@
 package iGin
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -14,26 +14,38 @@ type Engine struct {
 //ServeHttp为单次请求的内容
 func (engine *Engine) ServeHTTP(rspWriter http.ResponseWriter, req *http.Request) {
 	targetUrl := req.Method + "_" + req.URL.Path
-	if ok, handler := engine.routerManager.Query(targetUrl); ok {
-		fmt.Printf("log:%+v\n", handler)
+	if ok, handlers := engine.routerManager.Query(targetUrl); ok {
+		log.Printf("handlers:%+v\n", handlers)
 		ctx := NewContext(rspWriter, req)
-		handler(ctx)
+		ctx.handlers = handlers
+		ctx.Next()
 	} else {
 		http.Error(rspWriter, "404 not found", 404)
 	}
 }
 
-func (engine *Engine) registerHandler(method string, url string, handler HandlerFunc) {
+//注册试图函数
+func (engine *Engine) registerViewFunc(method string, url string, handler HandlerFunc) {
 	targetStr := method + "_" + url
-	_, _ = engine.routerManager.Insert(targetStr, handler)
+	_, _ = engine.routerManager.InsertViewFunc(targetStr, handler)
+}
+
+//注册中间件
+func (engine *Engine) registerMiddleWare(method string, url string, handlers []HandlerFunc) {
+	targetStr := method + "_" + url
+	_, _ = engine.routerManager.InsertMiddleWare(targetStr, handlers)
+}
+
+func (engine *Engine) Group(method string, url string, handlers ...HandlerFunc) {
+	engine.registerMiddleWare(method, url, handlers)
 }
 
 func (engine *Engine) Get(url string, handler HandlerFunc) {
-	engine.registerHandler("GET", url, handler)
+	engine.registerViewFunc("GET", url, handler)
 }
 
 func (engine *Engine) Post(url string, handler HandlerFunc) {
-	engine.registerHandler("POST", url, handler)
+	engine.registerViewFunc("POST", url, handler)
 }
 
 func (engine *Engine) Serve(port string) {

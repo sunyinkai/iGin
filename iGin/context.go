@@ -11,14 +11,26 @@ type Context struct {
 	//request
 	Method string
 	Path   string
+	//middleware
+	index    int
+	handlers []HandlerFunc
 }
 
 func NewContext(rspWriter http.ResponseWriter, req *http.Request) *Context {
 	return &Context{
-		RawReq: req,
-		RawRsp: rspWriter,
-		Method: req.Method,
-		Path:   req.URL.Path,
+		RawReq:   req,
+		RawRsp:   rspWriter,
+		Method:   req.Method,
+		Path:     req.URL.Path,
+		index:    -1,
+		handlers: make([]HandlerFunc, 0),
+	}
+}
+
+func (c *Context) Next() {
+	c.index++
+	for ; c.index < len(c.handlers); c.index++ { //因为不是所有的handler都会调用c.Next(),为了兼容
+		c.handlers[c.index](c)
 	}
 }
 

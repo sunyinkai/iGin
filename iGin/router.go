@@ -10,7 +10,7 @@ type node struct {
 	edge       string
 	par        *node
 	son        []*node
-	handler    HandlerFunc   //视图函数
+	viewFunc   HandlerFunc   //视图函数
 	middleWare []HandlerFunc //中间件
 }
 
@@ -27,9 +27,26 @@ func (r *RouterManager) CheckUrlValid(url string) (bool, error) {
 	return true, nil
 }
 
-func (r *RouterManager) Insert(url string, handler HandlerFunc) (bool, error) {
-	if valid, err := r.CheckUrlValid(url); !valid {
-		return false, err
+func (r *RouterManager) InsertViewFunc(url string, handler HandlerFunc) (bool, error) {
+	if ok, now := r.getTrieNode(url); ok {
+		now.viewFunc = handler
+		return true, nil
+	}
+	return false, nil
+}
+
+func (r *RouterManager) InsertMiddleWare(url string, handlers []HandlerFunc) (bool, error) {
+	if ok, now := r.getTrieNode(url); ok {
+		now.middleWare = append(now.middleWare, handlers...)
+		return true, nil
+	}
+	return false, nil
+}
+
+//返回url在Trie上对应的node节点
+func (r *RouterManager) getTrieNode(url string) (bool, *node) {
+	if valid, _ := r.CheckUrlValid(url); !valid {
+		return false, nil
 	}
 	pathStr := strings.Split(strings.Trim(url, "/"), "/")
 	if r.Root == nil {
@@ -55,24 +72,23 @@ func (r *RouterManager) Insert(url string, handler HandlerFunc) (bool, error) {
 			now = nextNode
 		}
 	}
-	now.handler = handler
-	return true, nil
+	return true, now
 }
 
 //询问url是否存在，并返回处理函数
-func (r *RouterManager) Query(url string) (bool, HandlerFunc) {
+func (r *RouterManager) Query(url string) (bool, []HandlerFunc) {
 	pathStr := strings.Split(strings.Trim(url, "/"), "/")
 	if r.Root == nil {
 		return false, nil
 	}
-//	handlers := make([]HandlerFunc, 0)
+	handlers := make([]HandlerFunc, 0)
 	now := r.Root
 	for _, path := range pathStr {
 		find := false
 		for _, son := range now.son {
 			if son.edge == path {
 				find = true
-//				handlers = append(handlers, son.middleWare...)
+				handlers = append(handlers, son.middleWare...)
 				now = son
 				break
 			}
@@ -81,5 +97,6 @@ func (r *RouterManager) Query(url string) (bool, HandlerFunc) {
 			return false, nil
 		}
 	}
-	return true, now.handler
+	handlers = append(handlers, now.viewFunc)
+	return true, handlers
 }
