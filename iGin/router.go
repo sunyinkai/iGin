@@ -1,7 +1,7 @@
 package iGin
 
 import (
-	"fmt"
+	"log"
 	"strings"
 )
 
@@ -54,7 +54,6 @@ func (r *RouterManager) getTrieNode(url string) (bool, *node) {
 	}
 	now := r.Root
 	for _, path := range pathStr {
-		fmt.Println(path)
 		hasSon := false
 		for _, son := range now.son {
 			if son.edge == path {
@@ -65,6 +64,7 @@ func (r *RouterManager) getTrieNode(url string) (bool, *node) {
 		}
 		//如果没有子节点,那么新建一个
 		if !hasSon {
+			log.Printf("newNode edge:<%s>", path)
 			nextNode := newNode()
 			nextNode.par = now
 			nextNode.edge = path
@@ -75,28 +75,104 @@ func (r *RouterManager) getTrieNode(url string) (bool, *node) {
 	return true, now
 }
 
+//用于管理url在Trie中的遍历以及动态路由解析
+type urlHelper struct {
+	index     int
+	pathSlice []string
+	url       string
+	isFinish  bool
+}
+
+func newUrlHelper(url string) *urlHelper {
+	//log.Printf("buildUrlHelper url:%s", url)
+	return &urlHelper{
+		index:     -1,
+		pathSlice: strings.Split(strings.Trim(url, "/"), "/"),
+		url:       url,
+		isFinish:  false,
+	}
+}
+
+func (u *urlHelper) advance() (int, string, bool) {
+	u.index++
+	if u.index == len(u.pathSlice) {
+		u.setFinish(true)
+	}
+	if u.isFinish || u.index < 0 || u.index >= len(u.pathSlice) {
+		return -1, "", false
+	}
+	return u.index, u.pathSlice[u.index], true
+}
+
+func (u *urlHelper) setFinish(value bool) {
+	u.isFinish = value
+}
+
+func (u *urlHelper) nowPath() string {
+	if u.index >= len(u.pathSlice) || u.index < 0 {
+		return ""
+	}
+	return u.pathSlice[u.index]
+}
+
+func (u *urlHelper) match(dst string) (map[string]string, bool) {
+	if u.nowPath() == dst {
+		return nil, true
+	}
+	if len(dst) > 1 {
+		switch dst[0] {
+		case ':':
+			params := make(map[string]string)
+			params[dst[1:]] = u.nowPath()
+			return params, true
+		case '*':
+			params := make(map[string]string)
+			params[dst[1:]] = strings.Join(u.pathSlice[u.index:], "/")
+			u.setFinish(true)
+			return params, true
+		}
+	}
+	return nil, false
+}
+
 //询问url是否存在，并返回处理函数
-func (r *RouterManager) Query(url string) (bool, []HandlerFunc) {
-	pathStr := strings.Split(strings.Trim(url, "/"), "/")
+func (r *RouterManager) Query(url string) (bool, []HandlerFunc, map[string]string) {
+	urlHp := newUrlHelper(url)
 	if r.Root == nil {
-		return false, nil
+		return false, nil, nil
 	}
 	handlers := make([]HandlerFunc, 0)
+	params := make(map[string]string)
 	now := r.Root
-	for _, path := range pathStr {
+	for {
+		index, path, ok := urlHp.advance()
+		log.Printf("urlHp,advance index:%d,path:%s,ok:%v", index, path, ok)
+		if !ok {
+			break
+		}
+
 		find := false
 		for _, son := range now.son {
-			if son.edge == path {
-				find = true
+			log.Printf("son.Edge:<%s>,now.son:%+v", son.edge, now.son)
+			if param, ok := urlHp.match(son.edge); ok {
 				handlers = append(handlers, son.middleWare...)
+				for k, v := range param {
+					params[k] = v
+				}
+				find = true
 				now = son
 				break
 			}
 		}
+		log.Printf("index:%v,url:%v,find:%v,path:%v", index, url, find, path)
 		if !find {
-			return false, nil
+			break
 		}
 	}
+	//如果没有视图函数,使用默认函数
+	if now.viewFunc == nil {
+		now.viewFunc = DefaultNotFound
+	}
 	handlers = append(handlers, now.viewFunc)
-	return true, handlers
+	return true, handlers, params
 }

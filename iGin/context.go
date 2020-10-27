@@ -11,6 +11,7 @@ type Context struct {
 	//request
 	Method string
 	Path   string
+	Params map[string]string
 	//middleware
 	index    int
 	handlers []HandlerFunc
@@ -22,6 +23,7 @@ func NewContext(rspWriter http.ResponseWriter, req *http.Request) *Context {
 		RawRsp:   rspWriter,
 		Method:   req.Method,
 		Path:     req.URL.Path,
+		Params:   make(map[string]string),
 		index:    -1,
 		handlers: make([]HandlerFunc, 0),
 	}

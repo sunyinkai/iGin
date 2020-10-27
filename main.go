@@ -36,8 +36,17 @@ func main() {
 		result := fmt.Sprintf("{'code':'0','path':'%s','host':'%s'}", ctx.Path, ctx.RawReq.Host)
 		ctx.Json(200, result)
 	})
-	engine.Get("/hello/", func(ctx *iGin.Context) {
-		ctx.Html(200, "<h1>you are hello </h1>")
+	engine.Get("/hello", func(ctx *iGin.Context) {
+		ctx.Html(200, "<h1>you are now in hello </h1>")
+	})
+	engine.Get("/world/", func(ctx *iGin.Context) {
+		ctx.Html(200, "<h1>you are now in world </h1>")
+	})
+	engine.Get("/tt/:name/:sex", func(ctx *iGin.Context) {
+		ctx.Json(200, ctx.Params)
+	})
+	engine.Get("/static/*filepath", func(ctx *iGin.Context) {
+		ctx.Json(200, ctx.Params)
 	})
 	engine.Serve(":8080")
 }

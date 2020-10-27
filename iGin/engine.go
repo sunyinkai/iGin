@@ -14,13 +14,15 @@ type Engine struct {
 //ServeHttp为单次请求的内容
 func (engine *Engine) ServeHTTP(rspWriter http.ResponseWriter, req *http.Request) {
 	targetUrl := req.Method + "_" + req.URL.Path
-	if ok, handlers := engine.routerManager.Query(targetUrl); ok {
+	if ok, handlers, params := engine.routerManager.Query(targetUrl); ok {
 		log.Printf("handlers:%+v\n", handlers)
 		ctx := NewContext(rspWriter, req)
 		ctx.handlers = handlers
+		ctx.Params = params
 		ctx.Next()
 	} else {
-		http.Error(rspWriter, "404 not found", 404)
+		ctx := NewContext(rspWriter, req)
+		DefaultNotFound(ctx)
 	}
 }
 
