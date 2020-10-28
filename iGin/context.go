@@ -3,6 +3,7 @@ package iGin
 import (
 	"encoding/json"
 	"net/http"
+	"sync"
 )
 
 type Context struct {
@@ -15,6 +16,10 @@ type Context struct {
 	//middleware
 	index    int
 	handlers []HandlerFunc
+	//Keys
+	Keys map[string]interface{}
+	//保护Keys的访问
+	mu sync.RWMutex
 }
 
 func NewContext(rspWriter http.ResponseWriter, req *http.Request) *Context {
@@ -64,4 +69,20 @@ func (c *Context) Html(code int, html string) {
 	c.SetHeader("Content-Type", "text/html")
 	c.SetStatus(code)
 	_, _ = c.RawRsp.Write([]byte(html))
+}
+
+func (c *Context) Set(key string, value interface{}) {
+	c.mu.Lock()
+	if c.Keys == nil {
+		c.Keys = make(map[string]interface{})
+	}
+	c.Keys[key] = value
+	c.mu.Unlock()
+}
+
+func (c *Context) Get(key string) (value interface{}, exist bool) {
+	c.mu.RLock()
+	value, exist = c.Keys[key]
+	c.mu.RUnlock()
+	return
 }

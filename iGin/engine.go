@@ -38,7 +38,7 @@ func (engine *Engine) registerMiddleWare(method string, url string, handlers []H
 	_, _ = engine.routerManager.InsertMiddleWare(targetStr, handlers)
 }
 
-func (engine *Engine) Group(method string, url string, handlers ...HandlerFunc) {
+func (engine *Engine) Use(method string, url string, handlers ...HandlerFunc) {
 	engine.registerMiddleWare(method, url, handlers)
 }
 
