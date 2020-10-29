@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+func init() {
+	log.SetPrefix("main ")
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
+
 func main() {
 	var engine iGin.Engine
 	engine.New()

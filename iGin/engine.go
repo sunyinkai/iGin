@@ -11,6 +11,11 @@ type Engine struct {
 	routerManager RouterManager
 }
 
+func init() {
+	log.SetPrefix("engine ")
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
+
 //ServeHttp为单次请求的内容
 func (engine *Engine) ServeHTTP(rspWriter http.ResponseWriter, req *http.Request) {
 	targetUrl := req.Method + "_" + req.URL.Path
