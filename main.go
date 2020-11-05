@@ -53,10 +53,20 @@ func main() {
 		ctx.Json(200, result)
 	})
 	engine.Get("/hello", func(ctx *iGin.Context) {
-		ctx.Html(200, "<h1>you are now in hello </h1>")
+		log.Printf("log,headers:%+v", ctx.RawRsp.Header())
+		ctx.Redirect(301, "/world")
+		log.Printf("log,headers:%+v", ctx.RawRsp.Header())
+		htmlStr := fmt.Sprintf("<h1>you are now in hello name=%s</h1>", ctx.Query("name"))
+		ctx.Html(200, htmlStr)
 	})
 	engine.Get("/world/", func(ctx *iGin.Context) {
-		ctx.Html(200, "<h1>you are now in world </h1>")
+		htmlStr := fmt.Sprintf("<h1>you are now in world,name=%s </h1>", ctx.Query("name"))
+		ctx.Redirect(301, "https://baidu.com")
+		ctx.Html(200, htmlStr)
+	})
+	engine.Get("/world/a", func(ctx *iGin.Context) {
+		htmlStr := fmt.Sprintf("<h1>you are now in world a,name=%s </h1>", ctx.Query("name"))
+		ctx.Html(200, htmlStr)
 	})
 	engine.Get("/tt/:name/:sex", func(ctx *iGin.Context) {
 		ctx.Json(200, ctx.Params)

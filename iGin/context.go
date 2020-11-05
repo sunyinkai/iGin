@@ -2,6 +2,7 @@ package iGin
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -85,4 +86,12 @@ func (c *Context) Get(key string) (value interface{}, exist bool) {
 	value, exist = c.Keys[key]
 	c.mu.RUnlock()
 	return
+}
+
+func (c *Context) Redirect(code int, location string) {
+	if (code < http.StatusMultipleChoices || code > http.StatusPermanentRedirect) && code != http.StatusCreated {
+		panic(fmt.Sprintf("Cannot redirect with status code %d", code))
+	}
+	//c.SetStatus(-1) // TODO:这里如果setStatus=code,http.Redirect会再setStatus将会导致bug
+	http.Redirect(c.RawRsp, c.RawReq, location, code)
 }
