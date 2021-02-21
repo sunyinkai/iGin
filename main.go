@@ -13,8 +13,7 @@ func init() {
 }
 
 func main() {
-	var engine iGin.Engine
-	engine.New()
+	engine := iGin.NewIGinEngine()
 
 	loggerMiddle := func() iGin.HandlerFunc {
 		return func(ctx *iGin.Context) {
@@ -74,5 +73,5 @@ func main() {
 	engine.Get("/static/*filepath", func(ctx *iGin.Context) {
 		ctx.Json(200, ctx.Params)
 	})
-	engine.Serve(":8080")
+	engine.Serve("0.0.0.0:8080")
 }

@@ -58,7 +58,6 @@ func (engine *Engine) Post(url string, handler HandlerFunc) {
 func (engine *Engine) Serve(port string) {
 	_ = http.ListenAndServe(port, engine)
 }
-
-func (engine *Engine) New() {
-	//engine.routerMap = make(map[string]HandlerFunc)
+func NewIGinEngine() Engine {
+	return Engine{}
 }
